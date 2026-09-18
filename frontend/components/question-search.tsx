@@ -33,9 +33,9 @@ export function QuestionSearch() {
     try {
       const response = await searchDocuments(trimmed);
       setResults(response.results);
-    } catch {
+    } catch (error) {
       setResults([]);
-      setErrorMessage(FRIENDLY_ERROR);
+      setErrorMessage(error instanceof Error ? error.message : FRIENDLY_ERROR);
     } finally {
       setIsLoading(false);
     }
