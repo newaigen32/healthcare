@@ -3,18 +3,18 @@ import logging
 from app.core.config import Settings
 from app.core.exceptions import SearchServiceError, http_error_from_search_exception
 from app.schemas.search import SearchResponse, SearchResult
-from app.services.mock_search import MockSearchProvider
 from app.services.search_provider import SearchProvider
+from app.services.static_search import StaticSearchProvider
 
 logger = logging.getLogger(__name__)
 
 
 class SearchService:
-    """Search orchestration. Mock today; Azure AI Search can replace the provider later."""
+    """Search orchestration. Static documents today; Azure AI Search can replace the provider later."""
 
     def __init__(self, settings: Settings, provider: SearchProvider | None = None) -> None:
         self._settings = settings
-        self._provider = provider or MockSearchProvider()
+        self._provider = provider or StaticSearchProvider()
 
     async def search(self, query: str) -> SearchResponse:
         logger.info("Search request received")

@@ -1,6 +1,6 @@
 # Knowledge Assistant
 
-Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app. The Next.js UI calls a FastAPI backend. This milestone returns **mock search documents** so we can prove frontend-to-backend communication. Azure AI Search is the next milestone and is not used yet.
+Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app. The Next.js UI calls a FastAPI backend. This milestone returns a **static document catalog** from `backend/app/data/documents.json` so every successful search shows the same source cards. Azure AI Search is the next milestone and is not used yet.
 
 This version does **not** generate LLM answers.
 
@@ -10,7 +10,7 @@ This version does **not** generate LLM answers.
 Employee
   → Next.js web application
     → FastAPI backend
-      → Mock search results
+      → Static document catalog
         → Frontend search results
 ```
 
@@ -104,16 +104,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## How Azure AI Search integration works
+## How search works in this milestone
 
 1. The employee submits a question in the Next.js app.
 2. `frontend/lib/api.ts` posts `{ "query": "..." }` to FastAPI `POST /api/search`.
 3. The API route calls `SearchService`.
-4. `SearchService` uses either `MockSearchProvider` or `AzureSearchProvider`.
-5. Azure Search is queried with keyword `search_text`. If `AZURE_SEARCH_VECTOR_FIELD` is set, the same request also includes a `VectorizableTextQuery` so Azure can run **hybrid search**.
-6. Documents are mapped into a stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`) before they leave the backend.
+4. `SearchService` reads static documents from `backend/app/data/documents.json` via `StaticSearchProvider`.
+5. The same catalog is returned for any non-empty query, with `total` set to the number of documents.
+6. Results use the stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`).
 
-Hybrid search requires an index that can vectorize the query text (an Azure Search vectorizer on that field). If that is not configured yet, leave `AZURE_SEARCH_VECTOR_FIELD` empty and keyword search remains the default.
+Azure AI Search is not used yet. Later, `StaticSearchProvider` can be replaced with an Azure provider without changing the frontend.
 
 ## Tests
 
