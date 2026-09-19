@@ -3,7 +3,6 @@ import logging
 from app.core.config import Settings
 from app.core.exceptions import SearchServiceError, http_error_from_search_exception
 from app.schemas.search import SearchResponse, SearchResult
-from app.services.azure_search import AzureSearchProvider
 from app.services.mock_search import MockSearchProvider
 from app.services.search_provider import SearchProvider
 
@@ -11,9 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class SearchService:
+    """Search orchestration. Mock today; Azure AI Search can replace the provider later."""
+
     def __init__(self, settings: Settings, provider: SearchProvider | None = None) -> None:
         self._settings = settings
-        self._provider = provider or _build_provider(settings)
+        self._provider = provider or MockSearchProvider()
 
     async def search(self, query: str) -> SearchResponse:
         logger.info("Search request received")
@@ -27,17 +28,9 @@ class SearchService:
             raise http_error_from_search_exception(exc) from exc
 
         logger.info("Search completed", extra={"result_count": len(results)})
-        return SearchResponse(query=query, results=results)
+        return SearchResponse(query=query, total=len(results), results=results)
 
     async def close(self) -> None:
         closer = getattr(self._provider, "close", None)
         if closer is not None:
             await closer()
-
-
-def _build_provider(settings: Settings) -> SearchProvider:
-    if settings.search_mode == "azure":
-        logger.info("Using Azure AI Search provider")
-        return AzureSearchProvider(settings)
-    logger.info("Using mock search provider")
-    return MockSearchProvider()

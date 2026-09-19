@@ -1,8 +1,8 @@
 # Knowledge Assistant
 
-Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app, the FastAPI backend searches company documents in Azure AI Search, and the UI shows the most relevant document titles, snippets, sources, and scores.
+Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app. The Next.js UI calls a FastAPI backend. This milestone returns **mock search documents** so we can prove frontend-to-backend communication. Azure AI Search is the next milestone and is not used yet.
 
-This version does **not** generate LLM answers. It is a reliable document search application. Later versions can add RAG, conversation history, authentication, and document upload on top of this architecture.
+This version does **not** generate LLM answers.
 
 ## Architecture
 
@@ -10,9 +10,8 @@ This version does **not** generate LLM answers. It is a reliable document search
 Employee
   → Next.js web application
     → FastAPI backend
-      → Azure AI Search
-        → Relevant documents
-          → Frontend search results
+      → Mock search results
+        → Frontend search results
 ```
 
 See [docs/architecture.md](docs/architecture.md) for a diagram and extension notes for Version 1.1 (RAG).

@@ -13,6 +13,7 @@ describe("SearchResults", () => {
       root.render(
         <SearchResults
           query="unknown topic"
+          total={0}
           results={[]}
           isLoading={false}
           errorMessage={null}
@@ -21,7 +22,7 @@ describe("SearchResults", () => {
       );
     });
 
-    expect(container.textContent).toContain("No documents found");
+    expect(container.textContent).toContain("No matching documents were found.");
     root.unmount();
     container.remove();
   });

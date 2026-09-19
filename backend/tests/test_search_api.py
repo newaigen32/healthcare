@@ -1,28 +1,13 @@
 from fastapi.testclient import TestClient
 
-from app.api.routes import search as search_routes
 from app.main import create_app
-from app.schemas.search import SearchResponse, SearchResult
 
 
-class _FakeSearchService:
-    async def search(self, query: str) -> SearchResponse:
-        return SearchResponse(
-            query=query,
-            results=[
-                SearchResult(
-                    id="1",
-                    title="Denied Claims Procedure",
-                    content="If a claim is denied because of missing documentation...",
-                    source="Claims-SOP-2026.pdf",
-                    category="SOP",
-                    score=0.92,
-                )
-            ],
-        )
-
-    async def close(self) -> None:
-        return None
+def test_health() -> None:
+    with TestClient(create_app()) as client:
+        response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
 
 
 def test_search_rejects_empty_query() -> None:
@@ -37,24 +22,25 @@ def test_search_rejects_missing_query() -> None:
     assert response.status_code == 422
 
 
-def test_search_uses_mock_provider_when_configured() -> None:
+def test_search_returns_successful_mock_results() -> None:
     with TestClient(create_app()) as client:
-        response = client.post("/api/search", json={"query": "denied claims procedure"})
+        response = client.post("/api/search", json={"query": "What is SOP's"})
     assert response.status_code == 200
     body = response.json()
-    assert body["results"]
-    assert "title" in body["results"][0]
-    assert "content" in body["results"][0]
-    assert "source" in body["results"][0]
-
-
-def test_search_returns_results() -> None:
-    app = create_app()
-    app.dependency_overrides[search_routes.get_search_service] = lambda: _FakeSearchService()
-    with TestClient(app) as client:
-        response = client.post("/api/search", json={"query": "What is the procedure for denied claims?"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["query"] == "What is the procedure for denied claims?"
+    assert body["query"] == "What is SOP's"
+    assert body["total"] == 3
+    assert len(body["results"]) == 3
+    assert body["results"][0]["id"] == "1"
     assert body["results"][0]["title"] == "Denied Claims Procedure"
     assert body["results"][0]["source"] == "Claims-SOP-2026.pdf"
+    assert body["results"][1]["id"] == "2"
+    assert body["results"][2]["id"] == "3"
+
+
+def test_search_returns_no_results_for_unknown_query() -> None:
+    with TestClient(create_app()) as client:
+        response = client.post("/api/search", json={"query": "zzzznotfoundxyz"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 0
+    assert body["results"] == []

@@ -1,17 +1,18 @@
-export type SearchResult = {
+export interface SearchRequest {
+  query: string;
+}
+
+export interface SearchResult {
   id: string;
   title: string;
   content: string;
   source: string;
-  category: string | null;
-  score: number | null;
-};
+  category?: string;
+  score?: number;
+}
 
-export type SearchResponse = {
+export interface SearchResponse {
   query: string;
+  total: number;
   results: SearchResult[];
-};
-
-export type SearchError = {
-  message: string;
-};
+}

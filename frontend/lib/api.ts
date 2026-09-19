@@ -1,15 +1,18 @@
-import type { SearchResponse } from "@/types/search";
+import type { SearchRequest, SearchResponse } from "@/types/search";
 
-const DEFAULT_ERROR = "We couldn't complete the search. Please try again.";
-const UNREACHABLE_ERROR =
-  "Could not reach the search service. Start the FastAPI backend on http://localhost:8000 and try again.";
+const FRIENDLY_ERROR = "We couldn't complete the search. Please try again.";
 
 function getApiBaseUrl(): string {
-  const value = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  const value = process.env.NEXT_PUBLIC_API_URL;
+  if (!value) {
+    throw new Error(FRIENDLY_ERROR);
+  }
   return value.replace(/\/$/, "");
 }
 
 export async function searchDocuments(query: string): Promise<SearchResponse> {
+  const payload: SearchRequest = { query };
+
   let response: Response;
   try {
     response = await fetch(`${getApiBaseUrl()}/api/search`, {
@@ -17,27 +20,20 @@ export async function searchDocuments(query: string): Promise<SearchResponse> {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify(payload),
     });
   } catch {
-    throw new Error(UNREACHABLE_ERROR);
+    throw new Error(FRIENDLY_ERROR);
   }
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response));
+    throw new Error(FRIENDLY_ERROR);
   }
 
-  return (await response.json()) as SearchResponse;
-}
-
-async function readErrorMessage(response: Response): Promise<string> {
-  try {
-    const body = (await response.json()) as { detail?: unknown };
-    if (typeof body.detail === "string" && body.detail.trim()) {
-      return body.detail;
-    }
-  } catch {
-    // Ignore JSON parse errors and return the friendly default.
-  }
-  return DEFAULT_ERROR;
+  const body = (await response.json()) as SearchResponse;
+  return {
+    query: body.query,
+    total: body.total,
+    results: body.results,
+  };
 }

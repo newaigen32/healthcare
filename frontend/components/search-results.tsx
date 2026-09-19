@@ -4,6 +4,7 @@ import type { SearchResult } from "@/types/search";
 
 type SearchResultsProps = {
   query: string;
+  total: number;
   results: SearchResult[];
   isLoading: boolean;
   errorMessage: string | null;
@@ -12,6 +13,7 @@ type SearchResultsProps = {
 
 export function SearchResults({
   query,
+  total,
   results,
   isLoading,
   errorMessage,
@@ -49,14 +51,11 @@ export function SearchResults({
     );
   }
 
-  if (results.length === 0) {
+  if (total === 0 || results.length === 0) {
     return (
       <Alert>
         <AlertTitle>No documents found</AlertTitle>
-        <AlertDescription>
-          We could not find company documents matching “{query}”. Try a shorter
-          question or different keywords.
-        </AlertDescription>
+        <AlertDescription>No matching documents were found.</AlertDescription>
       </Alert>
     );
   }
@@ -64,8 +63,7 @@ export function SearchResults({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Showing {results.length} result{results.length === 1 ? "" : "s"} for “
-        {query}”
+        Showing {total} result{total === 1 ? "" : "s"} for “{query}”
       </p>
       <div className="space-y-4">
         {results.map((result) => (

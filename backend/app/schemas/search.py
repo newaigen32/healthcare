@@ -20,4 +20,5 @@ class SearchResult(BaseModel):
 
 class SearchResponse(BaseModel):
     query: str
+    total: int
     results: list[SearchResult]

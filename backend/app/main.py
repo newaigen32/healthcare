@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Knowledge Assistant API",
         version="1.0.0",
-        description="Version 1 search API for company documents indexed in Azure AI Search.",
+        description="Knowledge Assistant search API. This milestone returns mock documents.",
         lifespan=lifespan,
     )
     application.add_middleware(

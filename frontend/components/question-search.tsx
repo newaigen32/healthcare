@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useState } from "react";
 
 import { SearchResults } from "@/components/search-results";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,12 @@ export function QuestionSearch() {
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function runSearch() {
     const trimmed = query.trim();
     if (!trimmed || isLoading) {
       return;
@@ -33,11 +33,25 @@ export function QuestionSearch() {
     try {
       const response = await searchDocuments(trimmed);
       setResults(response.results);
-    } catch (error) {
+      setTotal(response.total);
+    } catch {
       setResults([]);
-      setErrorMessage(error instanceof Error ? error.message : FRIENDLY_ERROR);
+      setTotal(0);
+      setErrorMessage(FRIENDLY_ERROR);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void runSearch();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void runSearch();
     }
   }
 
@@ -52,6 +66,7 @@ export function QuestionSearch() {
             id="question"
             value={query}
             onValueChange={(value) => setQuery(value)}
+            onKeyDown={handleKeyDown}
             placeholder="Ask about SOPs, payer rules, or previous cases..."
             className="h-11 text-base md:text-base"
             autoComplete="off"
@@ -63,6 +78,7 @@ export function QuestionSearch() {
       </form>
       <SearchResults
         query={submittedQuery}
+        total={total}
         results={results}
         isLoading={isLoading}
         errorMessage={errorMessage}
