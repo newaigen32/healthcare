@@ -28,10 +28,35 @@ See [docs/architecture.md](docs/architecture.md) for a diagram and extension not
 frontend/          Next.js application
 backend/           FastAPI application
 docs/              Architecture and Azure Search setup
+docker-compose.yml Run frontend and backend together
 README.md
 ```
 
-## Local setup
+## Run with Docker
+
+You need Docker Desktop (or Docker Engine plus Compose).
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- App: [http://localhost:3000](http://localhost:3000)
+- API health: [http://localhost:8000/health](http://localhost:8000/health)
+- Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+The browser calls FastAPI at `http://localhost:8000`. That URL is baked into the frontend image at build time (`NEXT_PUBLIC_API_URL`). Do not point it at the Docker service name `backend`; the browser cannot resolve that.
+
+Stop the stack with `Ctrl+C`, or:
+
+```bash
+docker compose down
+```
+
+## Local setup (without Docker)
 
 You need Node.js 20+ and Python 3.11+.
 
@@ -130,7 +155,7 @@ npm test
 
 ## Troubleshooting
 
-- **Frontend cannot reach the API.** Confirm FastAPI is running on port 8000 and `NEXT_PUBLIC_API_URL` matches. CORS must include `http://localhost:3000`.
+- **Frontend cannot reach the API.** Confirm FastAPI is running on port 8000 and `NEXT_PUBLIC_API_URL` matches. CORS must include `http://localhost:3000`. With Docker, use `docker compose up --build` and keep both published ports (`3000` and `8000`).
 - **`SEARCH_MODE=azure` fails at startup.** Set `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_INDEX_NAME`, and `AZURE_SEARCH_API_KEY`.
 - **Empty or poorly mapped results.** Your index field names may differ. Update the `AZURE_SEARCH_*_FIELD` variables.
 - **Hybrid search errors.** The vector field name may be wrong, or the index may not have a text vectorizer. Clear `AZURE_SEARCH_VECTOR_FIELD` to fall back to keyword search.
