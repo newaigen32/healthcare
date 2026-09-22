@@ -25,7 +25,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Knowledge Assistant API",
         version="1.0.0",
-        description="Knowledge Assistant search API. This milestone returns mock documents.",
+        description="Knowledge Assistant search API. Mock/static catalog or Azure AI Search.",
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -40,6 +40,7 @@ def create_app() -> FastAPI:
         return application.state.search_service
 
     application.dependency_overrides[search.get_search_service] = get_search_service
+    application.dependency_overrides[health.get_search_service] = get_search_service
     application.include_router(health.router)
     application.include_router(search.router)
     return application

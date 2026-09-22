@@ -3,6 +3,12 @@ from pydantic import BaseModel, Field
 
 class HealthResponse(BaseModel):
     status: str = "healthy"
+    search_provider: str = "mock"
+
+
+class SearchHealthResponse(BaseModel):
+    status: str
+    search_provider: str
 
 
 class SearchRequest(BaseModel):

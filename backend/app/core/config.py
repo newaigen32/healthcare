@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,11 +12,15 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        populate_by_name=True,
     )
 
     app_env: str = "development"
     log_level: str = "INFO"
-    search_mode: Literal["mock", "azure"] = "mock"
+    search_provider: Literal["mock", "azure"] = Field(
+        default="mock",
+        validation_alias=AliasChoices("SEARCH_PROVIDER", "search_provider", "SEARCH_MODE", "search_mode"),
+    )
     cors_origins: str = "http://localhost:3000"
 
     azure_search_endpoint: str = ""
@@ -31,10 +35,6 @@ class Settings(BaseSettings):
     azure_search_source_field: str = "source"
     azure_search_category_field: str = "category"
 
-    azure_search_vector_field: str = ""
-    azure_search_vector_k: int = Field(default=5, ge=1, le=50)
-    azure_search_semantic_configuration: str = ""
-
     @field_validator("azure_search_endpoint", "azure_search_index_name", "azure_search_api_key", mode="before")
     @classmethod
     def strip_optional(cls, value: object) -> object:
@@ -46,12 +46,8 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
-    @property
-    def hybrid_search_enabled(self) -> bool:
-        return bool(self.azure_search_vector_field)
-
     def validate_for_startup(self) -> None:
-        if self.search_mode != "azure":
+        if self.search_provider != "azure":
             return
 
         missing: list[str] = []
@@ -63,7 +59,7 @@ class Settings(BaseSettings):
             missing.append("AZURE_SEARCH_API_KEY")
         if missing:
             raise RuntimeError(
-                "SEARCH_MODE=azure requires these environment variables: "
+                "SEARCH_PROVIDER=azure requires these environment variables: "
                 + ", ".join(missing)
             )
 

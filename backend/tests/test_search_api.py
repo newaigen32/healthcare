@@ -7,7 +7,9 @@ def test_health() -> None:
     with TestClient(create_app()) as client:
         response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    body = response.json()
+    assert body["status"] == "healthy"
+    assert body["search_provider"] == "mock"
 
 
 def test_search_rejects_empty_query() -> None:

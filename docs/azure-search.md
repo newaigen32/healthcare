@@ -1,6 +1,6 @@
 # Azure AI Search setup
 
-Version 1 queries an existing Azure AI Search index. Document ingestion is out of scope.
+This milestone queries an existing Azure AI Search index with **keyword search**. Document ingestion, hybrid/vector search, and LLM/RAG answers are out of scope.
 
 ## Required Azure values
 
@@ -8,27 +8,36 @@ Version 1 queries an existing Azure AI Search index. Document ingestion is out o
 - Index name
 - Query API key
 
-Put them in `backend/.env` and set `SEARCH_MODE=azure`.
+Put them in a gitignored `.env` (repository root and/or `backend/.env`) and set:
+
+```
+SEARCH_PROVIDER=azure
+AZURE_SEARCH_ENDPOINT=https://<service>.search.windows.net
+AZURE_SEARCH_INDEX_NAME=<index-name>
+AZURE_SEARCH_API_KEY=<query-key>
+```
+
+Do not put these values in `docker-compose.yml` or in the frontend container.
 
 ## Index fields
 
-Map your schema with environment variables:
+The backend maps Azure documents onto the existing API `SearchResult` model.
 
-- `AZURE_SEARCH_ID_FIELD` (default `id`)
-- `AZURE_SEARCH_TITLE_FIELD` (default `title`)
-- `AZURE_SEARCH_CONTENT_FIELD` (default `content`)
-- `AZURE_SEARCH_SOURCE_FIELD` (default `source`)
-- `AZURE_SEARCH_CATEGORY_FIELD` (default `category`)
+| API field | Default Azure field | Fallback names |
+| --- | --- | --- |
+| `id` | `id` | — |
+| `title` | `title` | untitled if missing |
+| `content` | `content` | `chunk`, `text` |
+| `source` | `source` | `metadata_storage_name`, `sourcefile` |
+| `category` | `category` | omitted if missing |
+| `score` | `@search.score` | omitted if missing |
 
-Common alternative names that the mapper also checks for content and source:
+Override names with `AZURE_SEARCH_*_FIELD` environment variables if your index differs.
 
-- content: `chunk`, `text`
-- source: `metadata_storage_name`, `sourcefile`
+## Score
 
-## Hybrid search
+Azure keyword ranking uses BM25-style `@search.score` values. They are **not** guaranteed to be between 0 and 1. The API passes the raw score through. The UI shows it as “Relevance {score}” with two decimal places.
 
-Set `AZURE_SEARCH_VECTOR_FIELD` to the embedding field on the index (for example `contentVector`).
+## Hybrid / vector search
 
-Hybrid search in this project uses `VectorizableTextQuery`. That requires the index field to have an Azure Search **vectorizer** so the service can embed the query text. If you only stored vectors at index time and do not have a vectorizer, leave the vector field empty. Keyword search will continue to work, and hybrid can be enabled later without changing the API.
-
-Optional semantic ranking: set `AZURE_SEARCH_SEMANTIC_CONFIGURATION` to the semantic configuration name defined on the index.
+Not enabled in this milestone. Keyword `search_text` only.

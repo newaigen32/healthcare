@@ -1,6 +1,6 @@
 # Knowledge Assistant
 
-Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app. The Next.js UI calls a FastAPI backend. This milestone returns a **static document catalog** from `backend/app/data/documents.json` so every successful search shows the same source cards. Azure AI Search is the next milestone and is not used yet.
+Version 1 of an enterprise AI Knowledge Assistant. Employees ask a question in a web app. The Next.js UI calls a FastAPI backend. FastAPI uses a **mock/static catalog** by default, or **Azure AI Search keyword search** when `SEARCH_PROVIDER=azure`.
 
 This version does **not** generate LLM answers.
 
@@ -10,7 +10,7 @@ This version does **not** generate LLM answers.
 Employee
   → Next.js web application
     → FastAPI backend
-      → Static document catalog
+      → Mock/static catalog  or  Azure AI Search (keyword)
         → Frontend search results
 ```
 
@@ -20,7 +20,7 @@ See [docs/architecture.md](docs/architecture.md) for a diagram and extension not
 
 - **Frontend:** Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
 - **Backend:** Python, FastAPI, Pydantic, Azure AI Search SDK
-- **Search:** Azure AI Search (keyword first; hybrid when a vector field is configured)
+- **Search:** Mock/static catalog, or Azure AI Search keyword search
 
 ## Repository structure
 
@@ -50,6 +50,35 @@ Then open:
 
 The browser calls FastAPI at `http://localhost:8000`. That URL is baked into the frontend image at build time (`NEXT_PUBLIC_API_URL`). Do not point it at the Docker service name `backend`; the browser cannot resolve that.
 
+**Mock mode (default, same as today):**
+
+```bash
+cp .env.example .env
+# leave SEARCH_PROVIDER=mock
+docker compose up --build
+```
+
+**Azure mode:** put credentials in the gitignored root `.env` (never in `docker-compose.yml` or the frontend service):
+
+```
+SEARCH_PROVIDER=azure
+AZURE_SEARCH_ENDPOINT=https://<service>.search.windows.net
+AZURE_SEARCH_INDEX_NAME=<index-name>
+AZURE_SEARCH_API_KEY=<query-key>
+```
+
+Then:
+
+```bash
+docker compose up --build
+```
+
+Azure variables are passed only to the backend container. Rebuild is not required when only backend env values change; recreate the backend container:
+
+```bash
+docker compose up -d --force-recreate backend
+```
+
 Stop the stack with `Ctrl+C`, or:
 
 ```bash
@@ -67,7 +96,7 @@ cp backend/.env.example backend/.env
 cp frontend/.env.local.example frontend/.env.local
 ```
 
-The default backend `SEARCH_MODE` is `mock`, so you can run the full UI without Azure credentials.
+The default backend `SEARCH_PROVIDER` is `mock`, so you can run the full UI without Azure credentials.
 
 ## Environment variables
 
@@ -83,7 +112,7 @@ The browser never receives the Azure Search API key. It only calls FastAPI.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `SEARCH_MODE` | yes | `mock` or `azure` |
+| `SEARCH_PROVIDER` | yes | `mock` or `azure` (`SEARCH_MODE` is still accepted) |
 | `CORS_ORIGINS` | yes | Comma-separated allowed origins. Local: `http://localhost:3000` |
 | `AZURE_SEARCH_ENDPOINT` | when `azure` | Search service endpoint |
 | `AZURE_SEARCH_INDEX_NAME` | when `azure` | Index name |
@@ -95,9 +124,6 @@ The browser never receives the Azure Search API key. It only calls FastAPI.
 | `AZURE_SEARCH_CONTENT_FIELD` | no | Index field mapped to `content` |
 | `AZURE_SEARCH_SOURCE_FIELD` | no | Index field mapped to `source` |
 | `AZURE_SEARCH_CATEGORY_FIELD` | no | Index field mapped to `category` |
-| `AZURE_SEARCH_VECTOR_FIELD` | no | Vector field name. Empty = keyword search only |
-| `AZURE_SEARCH_VECTOR_K` | no | `k` for vector nearest neighbors |
-| `AZURE_SEARCH_SEMANTIC_CONFIGURATION` | no | Semantic ranker configuration name |
 
 ## Run the backend
 
@@ -134,11 +160,11 @@ Open [http://localhost:3000](http://localhost:3000).
 1. The employee submits a question in the Next.js app.
 2. `frontend/lib/api.ts` posts `{ "query": "..." }` to FastAPI `POST /api/search`.
 3. The API route calls `SearchService`.
-4. `SearchService` reads static documents from `backend/app/data/documents.json` via `StaticSearchProvider`.
-5. The same catalog is returned for any non-empty query, with `total` set to the number of documents.
-6. Results use the stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`).
+4. `SearchService` selects `MockSearchProvider` or `AzureSearchProvider` from `SEARCH_PROVIDER`.
+5. Mock mode reads `backend/app/data/documents.json`. Azure mode runs keyword search against the configured index.
+6. Results are mapped into the stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`) before they leave the backend.
 
-Azure AI Search is not used yet. Later, `StaticSearchProvider` can be replaced with an Azure provider without changing the frontend.
+See [docs/azure-search.md](docs/azure-search.md) for field mapping and score notes. Hybrid/vector search is not enabled yet.
 
 ## Tests
 
@@ -156,8 +182,8 @@ npm test
 ## Troubleshooting
 
 - **Frontend cannot reach the API.** Confirm FastAPI is running on port 8000 and `NEXT_PUBLIC_API_URL` matches. CORS must include `http://localhost:3000`. With Docker, use `docker compose up --build` and keep both published ports (`3000` and `8000`).
-- **`SEARCH_MODE=azure` fails at startup.** Set `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_INDEX_NAME`, and `AZURE_SEARCH_API_KEY`.
+- **`SEARCH_PROVIDER=azure` fails at startup.** Set `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_INDEX_NAME`, and `AZURE_SEARCH_API_KEY`.
 - **Empty or poorly mapped results.** Your index field names may differ. Update the `AZURE_SEARCH_*_FIELD` variables.
-- **Hybrid search errors.** The vector field name may be wrong, or the index may not have a text vectorizer. Clear `AZURE_SEARCH_VECTOR_FIELD` to fall back to keyword search.
+- **Relevance looks larger than 1.** Azure keyword scores are BM25-style and are passed through unchanged.
 - **401/403 from Azure.** The API key is invalid or does not have query permission. The UI only shows a friendly error; details stay in backend logs (without secrets).
 - **Timeouts.** Increase `AZURE_SEARCH_TIMEOUT_SECONDS` or check network access to the search endpoint.
