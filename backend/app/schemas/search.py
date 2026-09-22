@@ -8,7 +8,9 @@ class HealthResponse(BaseModel):
 
 class SearchHealthResponse(BaseModel):
     status: str
-    search_provider: str
+    provider: str
+    connected: bool
+    index: str | None = None
 
 
 class SearchRequest(BaseModel):

@@ -22,25 +22,25 @@ class SearchService:
         return self._settings.search_provider
 
     async def search(self, query: str) -> SearchResponse:
-        logger.info("Search request received", extra={"search_provider": self.provider_name})
+        logger.info('Search request received: query="%s"', query)
+        logger.info("Search provider: %s", self.provider_name)
         try:
             results: list[SearchResult] = await self._provider.search(
                 query=query,
                 top=self._settings.azure_search_top,
             )
         except SearchServiceError as exc:
-            logger.error("Search failed: %s", type(exc).__name__)
+            logger.error("Search failed using provider %s: %s", self.provider_name, type(exc).__name__)
             raise http_error_from_search_exception(exc) from exc
 
-        logger.info("Search completed", extra={"result_count": len(results)})
+        if self.provider_name == "azure":
+            logger.info("Azure AI Search returned %s results", len(results))
+        else:
+            logger.info("Mock search returned %s results", len(results))
         return SearchResponse(query=query, total=len(results), results=results)
 
     async def ping(self) -> None:
-        try:
-            await self._provider.ping()
-        except SearchServiceError as exc:
-            logger.error("Search health check failed: %s", type(exc).__name__)
-            raise http_error_from_search_exception(exc) from exc
+        await self._provider.ping()
 
     async def close(self) -> None:
         closer = getattr(self._provider, "close", None)

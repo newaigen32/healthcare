@@ -73,12 +73,8 @@ class AzureSearchProvider(SearchProvider):
             "include_total_count": False,
         }
         logger.info(
-            "Azure Search request started",
-            extra={
-                "search_mode": "keyword",
-                "top": top,
-                "index": self._settings.azure_search_index_name,
-            },
+            'Azure AI Search keyword query started: index="%s"',
+            self._settings.azure_search_index_name,
         )
 
         try:
@@ -86,7 +82,7 @@ class AzureSearchProvider(SearchProvider):
             mapped: list[SearchResult] = []
             async for item in results:
                 mapped.append(map_azure_document(item, self._settings))
-            logger.info("Azure Search request completed", extra={"result_count": len(mapped)})
+            logger.info("Azure AI Search returned %s results", len(mapped))
             return mapped
         except ClientAuthenticationError as exc:
             logger.error("Azure Search authentication failed")

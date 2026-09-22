@@ -67,6 +67,25 @@ async def test_search_service_wraps_upstream_errors() -> None:
     assert "couldn't complete the search" in str(exc_info.value.detail).lower()
 
 
+@pytest.mark.asyncio
+async def test_azure_search_failure_does_not_fall_back_to_mock() -> None:
+    class _FailingAzure:
+        async def search(self, query: str, top: int):
+            raise SearchUpstreamError("offline")
+
+    settings = Settings(
+        search_provider="azure",
+        azure_search_endpoint="https://example.search.windows.net",
+        azure_search_index_name="knowledge-index",
+        azure_search_api_key="test-key",
+    )
+    service = SearchService(settings, provider=_FailingAzure())  # type: ignore[arg-type]
+    with pytest.raises(Exception) as exc_info:
+        await service.search("ABC-927")
+    assert "couldn't complete the search" in str(exc_info.value.detail).lower()
+    assert "Denied Claims Procedure" not in str(exc_info.value)
+
+
 def test_static_documents_are_typed_search_results() -> None:
     documents = load_static_documents()
     assert all(isinstance(document, SearchResult) for document in documents)

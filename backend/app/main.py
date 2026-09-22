@@ -1,5 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,8 @@ from app.services.search_service import SearchService
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     configure_logging(settings)
+    logger = logging.getLogger(__name__)
+    logger.info("Search provider: %s", settings.search_provider)
     search_service = SearchService(settings)
     app.state.search_service = search_service
     yield

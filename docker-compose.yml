@@ -1,3 +1,6 @@
+# Azure credentials and SEARCH_PROVIDER are interpolated from the Compose
+# project-root `.env` file (and the host environment). They are injected only
+# into the backend service. The frontend never receives these values.
 services:
   backend:
     build:
