@@ -46,6 +46,7 @@ Then open:
 
 - App: [http://localhost:3000](http://localhost:3000)
 - API health: [http://localhost:8000/health](http://localhost:8000/health)
+- Search health: [http://localhost:8000/health/search](http://localhost:8000/health/search)
 - Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 The browser calls FastAPI at `http://localhost:8000`. That URL is baked into the frontend image at build time (`NEXT_PUBLIC_API_URL`). Do not point it at the Docker service name `backend`; the browser cannot resolve that.
