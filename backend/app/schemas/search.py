@@ -6,6 +6,11 @@ class HealthResponse(BaseModel):
     search_provider: str = "mock"
 
 
+class DatabaseHealthResponse(BaseModel):
+    status: str
+    connected: bool
+
+
 class SearchHealthResponse(BaseModel):
     status: str
     provider: str

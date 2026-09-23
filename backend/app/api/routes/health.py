@@ -3,7 +3,8 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import SearchServiceError
-from app.schemas.search import HealthResponse, SearchHealthResponse
+from app.db.database import ping_database
+from app.schemas.search import DatabaseHealthResponse, HealthResponse, SearchHealthResponse
 from app.services.search_service import SearchService
 
 router = APIRouter(tags=["health"])
@@ -39,3 +40,15 @@ async def search_health(
         return JSONResponse(status_code=503, content=payload)
 
     return SearchHealthResponse.model_validate(payload)
+
+
+@router.get("/health/database", response_model=DatabaseHealthResponse)
+async def database_health() -> DatabaseHealthResponse | JSONResponse:
+    try:
+        ping_database()
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unavailable", "connected": False},
+        )
+    return DatabaseHealthResponse(status="healthy", connected=True)

@@ -29,6 +29,13 @@ def test_search_health_returns_healthy_for_mock() -> None:
     assert response.json() == {"status": "healthy", "provider": "mock", "connected": True}
 
 
+def test_database_health_is_unavailable_without_database() -> None:
+    with TestClient(create_app()) as client:
+        response = client.get("/health/database")
+    assert response.status_code == 503
+    assert response.json()["connected"] is False
+
+
 def test_search_health_reports_azure_disconnect_without_secrets() -> None:
     app = create_app()
     app.dependency_overrides[health_routes.get_search_service] = lambda: _FailingSearchService()

@@ -5,9 +5,10 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, search
+from app.api.routes import documents, health, search
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.db.database import init_database
 from app.services.search_service import SearchService
 
 
@@ -17,6 +18,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     configure_logging(settings)
     logger = logging.getLogger(__name__)
     logger.info("Search provider: %s", settings.search_provider)
+    if settings.database_url:
+        logger.info("Initializing database")
+        init_database(settings)
     search_service = SearchService(settings)
     app.state.search_service = search_service
     yield
@@ -28,7 +32,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Knowledge Assistant API",
         version="1.0.0",
-        description="Knowledge Assistant search API. Mock/static catalog or Azure AI Search.",
+        description="Knowledge Assistant search API. PostgreSQL, mock catalog, or Azure AI Search.",
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -46,6 +50,7 @@ def create_app() -> FastAPI:
     application.dependency_overrides[health.get_search_service] = get_search_service
     application.include_router(health.router)
     application.include_router(search.router)
+    application.include_router(documents.router)
     return application
 
 

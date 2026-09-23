@@ -2,9 +2,11 @@ import pytest
 
 from app.core.config import Settings
 from app.core.exceptions import SearchConfigurationError, SearchUpstreamError
+from app.db.database import configure_engine, reset_engine
 from app.schemas.search import SearchResult
 from app.services.azure_search import AzureSearchProvider
 from app.services.mock_search import MockSearchProvider
+from app.services.postgres_search import PostgresSearchProvider
 from app.services.search_service import SearchService, build_search_provider
 from app.services.static_search import load_static_documents
 
@@ -22,6 +24,16 @@ def test_build_provider_selects_azure() -> None:
         azure_search_api_key="test-key",
     )
     assert isinstance(build_search_provider(settings), AzureSearchProvider)
+
+
+def test_build_provider_selects_postgres() -> None:
+    settings = Settings(search_provider="postgres", database_url="sqlite:///:memory:")
+    configure_engine(settings.database_url)
+    try:
+        provider = build_search_provider(settings)
+        assert isinstance(provider, PostgresSearchProvider)
+    finally:
+        reset_engine()
 
 
 def test_azure_provider_requires_credentials() -> None:

@@ -17,11 +17,12 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     log_level: str = "INFO"
-    search_provider: Literal["mock", "azure"] = Field(
+    search_provider: Literal["mock", "postgres", "azure"] = Field(
         default="mock",
         validation_alias=AliasChoices("SEARCH_PROVIDER", "search_provider", "SEARCH_MODE", "search_mode"),
     )
     cors_origins: str = "http://localhost:3000"
+    database_url: str = ""
 
     azure_search_endpoint: str = ""
     azure_search_index_name: str = ""
@@ -35,7 +36,13 @@ class Settings(BaseSettings):
     azure_search_source_field: str = "source"
     azure_search_category_field: str = "category"
 
-    @field_validator("azure_search_endpoint", "azure_search_index_name", "azure_search_api_key", mode="before")
+    @field_validator(
+        "azure_search_endpoint",
+        "azure_search_index_name",
+        "azure_search_api_key",
+        "database_url",
+        mode="before",
+    )
     @classmethod
     def strip_optional(cls, value: object) -> object:
         if isinstance(value, str):
@@ -47,6 +54,9 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     def validate_for_startup(self) -> None:
+        if self.search_provider == "postgres" and not self.database_url:
+            raise RuntimeError("SEARCH_PROVIDER=postgres requires DATABASE_URL.")
+
         if self.search_provider != "azure":
             return
 

@@ -9,7 +9,7 @@ flowchart TD
   employee[Employee]
   web[Next.js web application]
   api[FastAPI backend]
-  search[Mock catalog or Azure AI Search]
+  search[PostgreSQL mock or Azure AI Search]
   docs[Documents]
 
   employee --> web
@@ -28,7 +28,8 @@ flowchart TD
 | --- | --- |
 | Next.js | Question form, loading/empty/error/no-result states, display of `SearchResult` records |
 | FastAPI | Validate requests, CORS, logging, search orchestration |
-| Search service | Provider selection (`mock` or `azure`) and mapping to the internal result model |
+| Search service | Provider selection (`postgres`, `mock`, or `azure`) and mapping to the internal result model |
+| PostgreSQL | Local synthetic healthcare documents |
 | Azure AI Search | Keyword search when `SEARCH_PROVIDER=azure` |
 
 The browser never calls Azure Search. The Azure API key stays on the backend.
@@ -46,6 +47,7 @@ Frontends depend on this API shape, not on Azure-specific payloads:
 
 ## Search providers
 
+- **postgres:** SQLAlchemy search against the `documents` table
 - **mock:** static documents in `backend/app/data/documents.json`
 - **azure:** keyword `search_text` against the configured Azure AI Search index
 
