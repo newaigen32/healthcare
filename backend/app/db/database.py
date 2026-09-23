@@ -3,21 +3,15 @@ import logging
 import time
 
 from fastapi import HTTPException, status
-
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
-
-
-
-class Base(DeclarativeBase):
-    pass
-
 
 _engine: Engine | None = None
 _SessionLocal: sessionmaker[Session] | None = None
@@ -70,38 +64,22 @@ def ping_database() -> None:
         connection.execute(text("SELECT 1"))
 
 
-def init_database(settings: Settings) -> None:
-    from app.db.seed import seed_documents
-
+def connect_database(settings: Settings) -> None:
+    """Open a session factory. Schema and seed data are owned by database/scripts."""
     if not settings.database_url:
         return
 
     last_error: Exception | None = None
-    engine: Engine | None = None
     for attempt in range(1, 11):
         try:
             engine = configure_engine(settings.database_url)
             with engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
-            last_error = None
-            break
+            logger.info("Connected to PostgreSQL")
+            return
         except OperationalError as exc:
             last_error = exc
             logger.warning("Waiting for PostgreSQL (attempt %s/10)", attempt)
             time.sleep(2)
-    if last_error is not None or engine is None:
-        logger.error("Could not connect to PostgreSQL after retries")
-        raise last_error or RuntimeError("Could not connect to the database.")
-
-    Base.metadata.create_all(bind=engine)
-    if settings.app_env.lower() == "production":
-        logger.info("Skipping document seed because APP_ENV=production")
-        return
-    if _SessionLocal is None:
-        return
-    session = _SessionLocal()
-    try:
-        inserted = seed_documents(session)
-        logger.info("Document seed complete; inserted %s new rows", inserted)
-    finally:
-        session.close()
+    logger.error("Could not connect to PostgreSQL after retries")
+    raise last_error or RuntimeError("Could not connect to the database.")

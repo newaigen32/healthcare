@@ -30,8 +30,9 @@ See [docs/architecture.md](docs/architecture.md) for a diagram and extension not
 ```
 frontend/          Next.js application
 backend/           FastAPI application
+database/          PostgreSQL SQL scripts (schema, sample data)
 docs/              Architecture and Azure Search setup
-docker-compose.yml Run frontend and backend together
+docker-compose.yml Frontend, FastAPI, and PostgreSQL
 README.md
 ```
 
@@ -133,7 +134,9 @@ The browser never receives the Azure Search API key. It only calls FastAPI.
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `SEARCH_PROVIDER` | yes | `postgres`, `mock`, or `azure` |
-| `DATABASE_URL` | when `postgres` | SQLAlchemy URL, for example `postgresql+psycopg://healthcare_user:<password>@db:5432/healthcare` |
+| `DATABASE_URL` | when `postgres` | SQLAlchemy URL. In Docker: `postgresql+psycopg://healthcare_user:<password>@db:5432/healthcare` |
+| `POSTGRES_DB` | Docker | Database name. Default: `healthcare` |
+| `POSTGRES_USER` | Docker | Database user. Default: `healthcare_user` |
 | `POSTGRES_PASSWORD` | Docker | Password for the Compose PostgreSQL service |
 | `CORS_ORIGINS` | yes | Comma-separated allowed origins. Local: `http://localhost:3000` |
 | `AZURE_SEARCH_ENDPOINT` | when `azure` | Search service endpoint |
@@ -183,10 +186,27 @@ Open [http://localhost:3000](http://localhost:3000).
 2. `frontend/lib/api.ts` posts `{ "query": "..." }` to FastAPI `POST /api/search`.
 3. The API route calls `SearchService`.
 4. `SearchService` selects `PostgresSearchProvider`, `MockSearchProvider`, or `AzureSearchProvider` from `SEARCH_PROVIDER`.
-5. Postgres mode searches the `documents` table (title, summary, content). Mock mode reads `backend/app/data/documents.json`. Azure mode runs keyword search against the configured index.
+5. Postgres mode runs a parameterized `ILIKE` query on `documents` (title, summary, content). Schema and sample rows come from `database/scripts/`, not from Python. Mock mode reads `backend/app/data/documents.json`. Azure mode runs keyword search against the configured index.
 6. Results are mapped into the stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`) before they leave the backend.
 
 `GET /api/documents/{document_id}` returns one PostgreSQL document for the upcoming details page.
+
+PostgreSQL is the **application/source data** store. Azure AI Search is reserved as a later **indexing/search** layer. FastAPI never creates tables or inserts sample data; see [database/README.md](database/README.md).
+
+### PostgreSQL volume behavior
+
+Files mounted to `/docker-entrypoint-initdb.d` (`01_create_tables.sql` and `02_insert_sample_data.sql`) run **only** when PostgreSQL initializes a **new** data directory.
+
+If the `postgres_data` volume already exists, editing those SQL files will not rerun them automatically.
+
+To reset the local database during development:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+`docker compose down -v` **deletes the local PostgreSQL Docker volume** and therefore deletes the database data. Do not run it unless you intend to wipe local data.
 
 See [docs/azure-search.md](docs/azure-search.md) for field mapping and score notes. Hybrid/vector search is not enabled yet.
 

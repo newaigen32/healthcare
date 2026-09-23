@@ -1,10 +1,18 @@
+from pathlib import Path
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.database import Base
-from app.db.seed import seed_documents
+SCRIPTS = Path(__file__).resolve().parents[2] / "database" / "scripts"
+
+
+def _run_sql_file(session: Session, name: str) -> None:
+    sql = (SCRIPTS / name).read_text(encoding="utf-8")
+    raw = session.connection().connection
+    raw.executescript(sql)
+    session.commit()
 
 
 @pytest.fixture
@@ -14,10 +22,10 @@ def session() -> Session:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     db_session = factory()
-    seed_documents(db_session)
+    _run_sql_file(db_session, "01_create_tables.sql")
+    _run_sql_file(db_session, "02_insert_sample_data.sql")
     try:
         yield db_session
     finally:

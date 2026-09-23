@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import documents, health, search
 from app.core.config import get_settings
 from app.core.logging import configure_logging
-from app.db.database import init_database
+from app.db.database import connect_database
 from app.services.search_service import SearchService
 
 
@@ -19,8 +19,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger = logging.getLogger(__name__)
     logger.info("Search provider: %s", settings.search_provider)
     if settings.database_url:
-        logger.info("Initializing database")
-        init_database(settings)
+        logger.info("Connecting to PostgreSQL")
+        connect_database(settings)
     search_service = SearchService(settings)
     app.state.search_service = search_service
     yield

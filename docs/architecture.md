@@ -2,22 +2,61 @@
 
 Version 1 is a search application. Employees ask a question, the system retrieves relevant company documents, and the UI displays those documents. There is no LLM answer generation in this version.
 
-## Request flow
+## Current local architecture
+
+```
+Next.js
+  |
+FastAPI
+  |
+PostgreSQL
+  |
+documents table
+```
+
+PostgreSQL is the **application/source data** store. Schema and sample data live in `database/scripts/`, not in the Python backend.
 
 ```mermaid
 flowchart TD
   employee[Employee]
   web[Next.js web application]
   api[FastAPI backend]
-  search[PostgreSQL mock or Azure AI Search]
-  docs[Documents]
+  db[(PostgreSQL documents)]
 
   employee --> web
   web --> api
-  api --> search
-  search --> docs
-  docs --> search
-  search --> api
+  api --> db
+  db --> api
+  api --> web
+  web --> employee
+```
+
+## Future architecture
+
+```
+FastAPI
+  |
+  +---- PostgreSQL
+  |
+  +---- Azure AI Search
+```
+
+Azure AI Search is the later **indexing/search** layer. It remains implemented as `SEARCH_PROVIDER=azure` but is not required for local development.
+
+```mermaid
+flowchart TD
+  employee[Employee]
+  web[Next.js web application]
+  api[FastAPI backend]
+  db[(PostgreSQL source data)]
+  azure[Azure AI Search]
+
+  employee --> web
+  web --> api
+  api --> db
+  api --> azure
+  db --> api
+  azure --> api
   api --> web
   web --> employee
 ```
@@ -27,8 +66,9 @@ flowchart TD
 | Component | Responsibility |
 | --- | --- |
 | Next.js | Question form, loading/empty/error/no-result states, display of `SearchResult` records |
-| FastAPI | Validate requests, CORS, logging, search orchestration |
+| FastAPI | Validate requests, CORS, logging, search orchestration, PostgreSQL connection |
 | Search service | Provider selection (`postgres`, `mock`, or `azure`) and mapping to the internal result model |
+| `database/scripts` | Table creation and synthetic sample data |
 | PostgreSQL | Local synthetic healthcare documents |
 | Azure AI Search | Keyword search when `SEARCH_PROVIDER=azure` |
 
@@ -47,7 +87,7 @@ Frontends depend on this API shape, not on Azure-specific payloads:
 
 ## Search providers
 
-- **postgres:** SQLAlchemy search against the `documents` table
+- **postgres:** parameterized SQL against the `documents` table
 - **mock:** static documents in `backend/app/data/documents.json`
 - **azure:** keyword `search_text` against the configured Azure AI Search index
 

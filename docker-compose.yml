@@ -5,13 +5,15 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_DB: healthcare
-      POSTGRES_USER: healthcare_user
+      POSTGRES_DB: ${POSTGRES_DB:-healthcare}
+      POSTGRES_USER: ${POSTGRES_USER:-healthcare_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_local_only}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/scripts/01_create_tables.sql:/docker-entrypoint-initdb.d/01_create_tables.sql:ro
+      - ./database/scripts/02_insert_sample_data.sql:/docker-entrypoint-initdb.d/02_insert_sample_data.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U healthcare_user -d healthcare"]
       interval: 5s
