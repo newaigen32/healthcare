@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class HealthResponse(BaseModel):
     status: str = "healthy"
-    search_provider: str = "mock"
+    search_provider: str = "postgres"
 
 
 class DatabaseHealthResponse(BaseModel):

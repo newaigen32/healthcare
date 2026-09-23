@@ -87,7 +87,7 @@ Frontends depend on this API shape, not on Azure-specific payloads:
 
 ## Search providers
 
-- **postgres:** parameterized SQL against the `documents` table
+- **postgres:** parameterized SQL against `id`, `title`, `summary`, and `content`
 - **mock:** static documents in `backend/app/data/documents.json`
 - **azure:** keyword `search_text` against the configured Azure AI Search index
 

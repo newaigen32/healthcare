@@ -1,9 +1,14 @@
 from pathlib import Path
+import os
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# API tests import create_app(), which reads SEARCH_PROVIDER at import time.
+# Docker/runtime still use postgres via compose and .env files.
+os.environ.setdefault("SEARCH_PROVIDER", "mock")
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "database" / "scripts"
 

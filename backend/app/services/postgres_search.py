@@ -19,7 +19,8 @@ CATEGORY_LABELS = {
 SEARCH_SQL = """
 SELECT id, title, document_type, source, summary, content
 FROM documents
-WHERE title ILIKE :pattern ESCAPE '\\'
+WHERE id ILIKE :pattern ESCAPE '\\'
+   OR title ILIKE :pattern ESCAPE '\\'
    OR COALESCE(summary, '') ILIKE :pattern ESCAPE '\\'
    OR content ILIKE :pattern ESCAPE '\\'
 ORDER BY title

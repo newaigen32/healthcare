@@ -186,7 +186,7 @@ Open [http://localhost:3000](http://localhost:3000).
 2. `frontend/lib/api.ts` posts `{ "query": "..." }` to FastAPI `POST /api/search`.
 3. The API route calls `SearchService`.
 4. `SearchService` selects `PostgresSearchProvider`, `MockSearchProvider`, or `AzureSearchProvider` from `SEARCH_PROVIDER`.
-5. Postgres mode runs a parameterized `ILIKE` query on `documents` (title, summary, content). Schema and sample rows come from `database/scripts/`, not from Python. Mock mode reads `backend/app/data/documents.json`. Azure mode runs keyword search against the configured index.
+5. Postgres mode runs a parameterized `ILIKE` query on `documents` (`id`, title, summary, content). Schema and sample rows come from `database/scripts/`, not from Python. Mock mode reads `backend/app/data/documents.json`. Azure mode runs keyword search against the configured index.
 6. Results are mapped into the stable `SearchResult` model (`id`, `title`, `content`, `source`, `category`, `score`) before they leave the backend.
 
 `GET /api/documents/{document_id}` returns one PostgreSQL document for the upcoming details page.

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     search_provider: Literal["mock", "postgres", "azure"] = Field(
-        default="mock",
+        default="postgres",
         validation_alias=AliasChoices("SEARCH_PROVIDER", "search_provider", "SEARCH_MODE", "search_mode"),
     )
     cors_origins: str = "http://localhost:3000"
