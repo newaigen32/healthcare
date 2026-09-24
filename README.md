@@ -225,7 +225,7 @@ npm test
 
 ## Troubleshooting
 
-- **Frontend cannot reach the API.** Confirm FastAPI is running on port 8000 and `NEXT_PUBLIC_API_URL` matches. CORS must include `http://localhost:3000`. With Docker, use `docker compose up --build` and keep both published ports (`3000` and `8000`).
+- **Frontend Docker build fails with `Failed to fetch Geist from Google Fonts`.** The image no longer downloads Google Fonts at build time. Pull this change and rebuild: `docker compose up --build`.
 - **`SEARCH_PROVIDER=postgres` fails at startup.** Set `DATABASE_URL`. Inside Compose the hostname must be `db`, not `localhost`.
 - **PostgreSQL is not ready.** Wait for `docker compose exec db pg_isready -U healthcare_user -d healthcare`. The backend retries the connection on startup.
 - **`SEARCH_PROVIDER=azure` fails at startup.** Set `AZURE_SEARCH_ENDPOINT`, `AZURE_SEARCH_INDEX_NAME`, and `AZURE_SEARCH_API_KEY`.
