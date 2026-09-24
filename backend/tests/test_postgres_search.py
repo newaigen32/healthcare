@@ -56,9 +56,20 @@ async def test_postgres_search_authorization_returns_mixed_document_types(sessio
     assert "Previous Cases" in categories
 
 
+@pytest.mark.asyncio
+async def test_postgres_search_returns_sop_overview_for_natural_language(session_factory) -> None:
+    provider = PostgresSearchProvider(session_factory)
+    for query in ("SOP's", "what is SOP's", "explain sop"):
+        results = await provider.search(query, top=10)
+        assert results, query
+        assert any(result.id == "sop-024" for result in results), query
+        assert any(result.category == "SOP" for result in results), query
+        assert results[0].id == "sop-024"
+
+
 def test_sample_data_script_is_idempotent(session: Session) -> None:
     first_count = session.execute(text("SELECT COUNT(*) FROM documents")).scalar_one()
     _run_sql_file(session, "02_insert_sample_data.sql")
     second_count = session.execute(text("SELECT COUNT(*) FROM documents")).scalar_one()
-    assert first_count == 33
+    assert first_count == 34
     assert second_count == first_count

@@ -36,5 +36,6 @@ WHERE id IN (
     'sop-020',
     'sop-021',
     'sop-022',
-    'sop-023'
+    'sop-023',
+    'sop-024'
 );

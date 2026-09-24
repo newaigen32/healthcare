@@ -42,6 +42,14 @@ WHERE document_type = 'SOP';
 
 SELECT id, title, summary
 FROM documents
+WHERE title ILIKE '%SOP%'
+   OR summary ILIKE '%SOP%'
+   OR content ILIKE '%SOP%'
+   OR document_type ILIKE '%SOP%'
+ORDER BY id;
+
+SELECT id, title, summary
+FROM documents
 WHERE title ILIKE '%authorization%'
    OR summary ILIKE '%authorization%'
    OR content ILIKE '%authorization%'

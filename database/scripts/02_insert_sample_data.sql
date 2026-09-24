@@ -397,5 +397,17 @@ INSERT INTO documents (
     '1.0',
     'ACTIVE',
     '2026-04-09'
+),
+(
+    'sop-024',
+    'SOP Overview: Definition and Components',
+    'SOP',
+    'Synthetic-SOP-Overview-2026.pdf',
+    'Explains what an SOP is, why SOP''s are used in healthcare operations, and the usual components of a standard operating procedure.',
+    'An SOP, or standard operating procedure, is a written workflow that tells staff how to complete a repeatable operational task the same way each time. In this knowledge base, SOP''s cover prior authorization, eligibility, claims, appeals, referrals, and related revenue-cycle work. They do not make clinical treatment decisions. Typical SOP components include purpose, scope, roles, required inputs, step-by-step procedure, documentation requirements, systems or payer portals used, quality checks, and related references. Search SOP or SOP''s to find intake, follow-up, denial handling, and other procedure documents.',
+    'Quality and Operations',
+    '1.0',
+    'ACTIVE',
+    '2026-01-01'
 )
 ON CONFLICT (id) DO NOTHING;
