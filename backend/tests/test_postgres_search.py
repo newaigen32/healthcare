@@ -60,5 +60,5 @@ def test_sample_data_script_is_idempotent(session: Session) -> None:
     first_count = session.execute(text("SELECT COUNT(*) FROM documents")).scalar_one()
     _run_sql_file(session, "02_insert_sample_data.sql")
     second_count = session.execute(text("SELECT COUNT(*) FROM documents")).scalar_one()
-    assert first_count == 15
+    assert first_count == 33
     assert second_count == first_count
